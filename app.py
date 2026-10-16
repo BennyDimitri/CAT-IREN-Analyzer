@@ -7,7 +7,8 @@ import html
 import numpy as np
 import plotly.graph_objects as go
 
-st.set_page_config(page_title='CAT + IREN Live Research', page_icon='📈', layout='wide')
+st.set_page_config(page_title='CAT + IREN Live Research', page_icon='📈', layout='wide', initial_sidebar_state='collapsed')
+st.markdown("""<style>.block-container {max-width: 100% !important; padding-left: 1.2rem; padding-right: 1.2rem; padding-top: 1rem;} iframe {width:100%;}</style>""", unsafe_allow_html=True)
 st.title('CAT + IREN | Investor Terminal Pro')
 st.caption('Two TradingView charts • external analyst targets • company news • refreshed research')
 
@@ -15,6 +16,7 @@ with st.sidebar:
     st.header('Dashboard controls')
     timeframe = st.selectbox('TradingView interval', ['1D','1W','1M','60','15','5'], index=0, format_func=lambda x: {'1D':'Daily','1W':'Weekly','1M':'Monthly','60':'1 hour','15':'15 minutes','5':'5 minutes'}[x])
     chart_style = st.selectbox('Chart type', ['Candles','Line'], index=0)
+    chart_height = st.slider('Chart height (pixels)', 650, 1300, 950, step=50)
     st.caption('Click Refresh to reload research. TradingView updates its chart independently.')
     st.caption('Exchange feeds may be delayed; Yahoo data and TradingView are separate.')
     if st.button('🔄 Refresh research', use_container_width=True):
@@ -53,8 +55,8 @@ def chart(symbol):
     config={'autosize':True,'symbol':f'NASDAQ:{symbol}' if symbol=='IREN' else 'NYSE:CAT','interval':timeframe,'timezone':'America/New_York','theme':'dark','style':'1' if chart_style=='Candles' else '2','locale':'en','allow_symbol_change':False,'hide_side_toolbar':False,'withdateranges':True,'save_image':False,'calendar':False,'studies':['STD;SMA'],'support_host':'https://www.tradingview.com'}
     import json
     payload=json.dumps(config)
-    markup=f'''<div class="tradingview-widget-container" style="height:520px;width:100%"><div class="tradingview-widget-container__widget" style="height:100%;width:100%"></div><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>{payload}</script></div>'''
-    components.html(markup,height=540,scrolling=False)
+    markup=f'''<div class="tradingview-widget-container" style="height:{chart_height}px;width:100%"><div class="tradingview-widget-container__widget" style="height:100%;width:100%"></div><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>{payload}</script></div>'''
+    components.html(markup,height=chart_height+20,scrolling=False)
 
 def dollar(x):
     return f'${x:,.2f}' if isinstance(x,(float,int)) else 'Unavailable'
