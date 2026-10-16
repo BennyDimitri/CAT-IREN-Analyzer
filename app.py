@@ -16,7 +16,7 @@ with st.sidebar:
     st.header('Dashboard controls')
     timeframe = st.selectbox('TradingView interval', ['1D','1W','1M','60','15','5'], index=0, format_func=lambda x: {'1D':'Daily','1W':'Weekly','1M':'Monthly','60':'1 hour','15':'15 minutes','5':'5 minutes'}[x])
     chart_style = st.selectbox('Chart type', ['Candles','Line'], index=0)
-    chart_height = st.slider('Chart height (pixels)', 650, 1300, 950, step=50)
+    chart_height = st.slider('Chart height (pixels)', 700, 1500, 1050, step=50)
     st.caption('Click Refresh to reload research. TradingView updates its chart independently.')
     st.caption('Exchange feeds may be delayed; Yahoo data and TradingView are separate.')
     if st.button('🔄 Refresh research', use_container_width=True):
@@ -52,11 +52,37 @@ def news_for(symbol):
     except Exception:return []
 
 def chart(symbol):
-    config={'autosize':True,'symbol':f'NASDAQ:{symbol}' if symbol=='IREN' else 'NYSE:CAT','interval':timeframe,'timezone':'America/New_York','theme':'dark','style':'1' if chart_style=='Candles' else '2','locale':'en','allow_symbol_change':False,'hide_side_toolbar':False,'withdateranges':True,'save_image':False,'calendar':False,'studies':['STD;SMA'],'support_host':'https://www.tradingview.com'}
+    # Explicit dimensions are essential: TradingView autosize can collapse
+    # the internal chart to ~100px even when Streamlit allocates 1000px.
     import json
-    payload=json.dumps(config)
-    markup=f'''<div class="tradingview-widget-container" style="height:{chart_height}px;width:100%"><div class="tradingview-widget-container__widget" style="height:100%;width:100%"></div><script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>{payload}</script></div>'''
-    components.html(markup,height=chart_height+20,scrolling=False)
+    config = {
+        'autosize': False,
+        'width': '100%',
+        'height': chart_height,
+        'symbol': 'NASDAQ:IREN' if symbol == 'IREN' else 'NYSE:CAT',
+        'interval': timeframe,
+        'timezone': 'America/New_York',
+        'theme': 'dark',
+        'style': '1' if chart_style == 'Candles' else '2',
+        'locale': 'en',
+        'allow_symbol_change': False,
+        'hide_side_toolbar': False,
+        'withdateranges': True,
+        'save_image': False,
+        'calendar': False,
+        'studies': ['STD;SMA'],
+        'support_host': 'https://www.tradingview.com'
+    }
+    markup = f'''<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <style>html,body{{margin:0;padding:0;width:100%;height:{chart_height}px;overflow:hidden;background:#101216}}
+    .tradingview-widget-container{{width:100%;height:{chart_height}px}}
+    .tradingview-widget-container__widget{{width:100%;height:{chart_height}px}}</style></head><body>
+    <div class="tradingview-widget-container">
+    <div class="tradingview-widget-container__widget"></div>
+    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>{json.dumps(config)}</script>
+    </div></body></html>'''
+    components.html(markup, height=chart_height + 8, scrolling=False)
+
 
 def dollar(x):
     return f'${x:,.2f}' if isinstance(x,(float,int)) else 'Unavailable'
